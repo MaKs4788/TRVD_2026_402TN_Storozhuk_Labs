@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LabsTRVD.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260324134350_InitialCreate")]
+    [Migration("20260326202941_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -30,6 +30,7 @@ namespace LabsTRVD.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("MonthlyLimit")
+                        .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("UserId")
@@ -54,6 +55,7 @@ namespace LabsTRVD.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("UserId")
@@ -73,9 +75,10 @@ namespace LabsTRVD.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("CategoryId")
+                    b.Property<int?>("CategoryId")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("Date")
@@ -103,7 +106,11 @@ namespace LabsTRVD.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("TEXT");
@@ -115,6 +122,8 @@ namespace LabsTRVD.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("IncomeId");
+
+                    b.HasIndex("CategoryId");
 
                     b.HasIndex("UserId");
 
@@ -158,11 +167,13 @@ namespace LabsTRVD.Migrations
 
             modelBuilder.Entity("LabsTRVD.Entities.Budget", b =>
                 {
-                    b.HasOne("LabsTRVD.Entities.User", null)
+                    b.HasOne("LabsTRVD.Entities.User", "User")
                         .WithMany("Budgets")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LabsTRVD.Entities.Category", b =>
@@ -181,8 +192,7 @@ namespace LabsTRVD.Migrations
                     b.HasOne("LabsTRVD.Entities.Category", "Category")
                         .WithMany("Expenses")
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("LabsTRVD.Entities.User", "User")
                         .WithMany("Expenses")
@@ -197,11 +207,18 @@ namespace LabsTRVD.Migrations
 
             modelBuilder.Entity("LabsTRVD.Entities.Income", b =>
                 {
+                    b.HasOne("LabsTRVD.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("LabsTRVD.Entities.User", "User")
                         .WithMany("Incomes")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Category");
 
                     b.Navigation("User");
                 });

@@ -18,6 +18,8 @@ namespace LabsTRVD.Repositories
         {
             return await _context.Expenses
                 .Where(e => e.UserId == userId)
+                .Include(e => e.Category)
+                .OrderByDescending(e => e.Date)
                 .ToListAsync();
         }
     }
