@@ -1,4 +1,4 @@
-﻿// Services/AuthService.cs
+﻿
 using LabsTRVD.DTOs;
 using LabsTRVD.Entities;
 using LabsTRVD.Interfaces;
@@ -25,17 +25,14 @@ public class AuthService : IAuthService
 
     public async Task<AuthResultDto> SignInAsync(SignInDto dto)
     {
-        // 1. Знайти користувача по email
         var users = await _userRepository.FindAsync(u => u.Email == dto.Email);
         var user = users.FirstOrDefault()
             ?? throw new UnauthorizedAccessException("Невірний email або пароль.");
 
-        // 2. ✅ Перевірити BCrypt хеш
         bool isValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
         if (!isValid)
             throw new UnauthorizedAccessException("Невірний email або пароль.");
 
-        // 3. Згенерувати JWT
         string token = GenerateJwtToken(user);
 
         return new AuthResultDto
@@ -52,7 +49,6 @@ public class AuthService : IAuthService
             Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        // ✅ Токен містить UserId та Role
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
