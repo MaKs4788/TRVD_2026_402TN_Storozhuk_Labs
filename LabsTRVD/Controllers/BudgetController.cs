@@ -1,11 +1,13 @@
 ﻿using LabsTRVD.DTOs;
 using LabsTRVD.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LabsTRVD.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class BudgetController : ControllerBase
     {
         private readonly IBudgetService _budgetService;
