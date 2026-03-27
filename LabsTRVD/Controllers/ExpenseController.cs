@@ -2,12 +2,14 @@
 using LabsTRVD.DTOs;
 using LabsTRVD.Entities;
 using LabsTRVD.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LabsTRVD.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ExpenseController : ControllerBase
     {
         private readonly IExpenseService _expenseService;
