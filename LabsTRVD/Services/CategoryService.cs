@@ -1,6 +1,7 @@
-﻿using LabsTRVD.Entities;
-using LabsTRVD.Repositories.Interfaces;
-using LabsTRVD.Services.Interfaces;
+﻿using AutoMapper;
+using LabsTRVD.DTOs.ServicesDTOs;
+using LabsTRVD.Entities;
+using LabsTRVD.Interfaces.Services;
 
 namespace LabsTRVD.Services
 {
@@ -9,46 +10,54 @@ namespace LabsTRVD.Services
         private readonly IRepository<Category> _categoryRepository;
         private readonly IRepository<Expense> _expenseRepository;
         private readonly IRepository<Income> _incomeRepository;
+        private readonly IMapper _mapper;
 
         public CategoryService(
             IRepository<Category> categoryRepository,
             IRepository<Expense> expenseRepository,
-            IRepository<Income> incomeRepository)
+            IRepository<Income> incomeRepository,
+            IMapper mapper)
         {
             _categoryRepository = categoryRepository;
             _expenseRepository = expenseRepository;
             _incomeRepository = incomeRepository;
+            _mapper = mapper;
         }
 
-        public async Task<IEnumerable<Category>> GetUserCategoriesAsync(Guid userId)
+        public async Task<IEnumerable<CategoryDtoResponse>> GetUserCategoriesAsync(Guid userId)
         {
-            return await _categoryRepository.FindAsync(c => c.UserId == userId);
+            var categories = await _categoryRepository.FindAsync(c => c.UserId == userId);
+            return _mapper.Map<IEnumerable<CategoryDtoResponse>>(categories);
         }
 
-        public async Task<Category?> GetByIdAsync(int id)
+        public async Task<CategoryDtoResponse?> GetByIdAsync(int id)
         {
-            return await _categoryRepository.GetByIdAsync(id);
+            var category = await _categoryRepository.GetByIdAsync(id);
+            return category == null ? null : _mapper.Map<CategoryDtoResponse>(category);
         }
 
-        public async Task AddCategoryAsync(Category category)
+        public async Task<CategoryDtoResponse> AddCategoryAsync(CategoryDto categoryDto)
         {
-            if (string.IsNullOrWhiteSpace(category.Name))
+            if (string.IsNullOrWhiteSpace(categoryDto.Name))
                 throw new Exception("Назва категорії не може бути порожньою");
 
+            var category = _mapper.Map<Category>(categoryDto);
             await _categoryRepository.AddAsync(category);
+            return _mapper.Map<CategoryDtoResponse>(category);
         }
 
-        public async Task UpdateCategoryAsync(Category category)
+        public async Task<CategoryDtoResponse> UpdateCategoryAsync(int id, CategoryDto categoryDto)
         {
-            if (string.IsNullOrWhiteSpace(category.Name))
+            if (string.IsNullOrWhiteSpace(categoryDto.Name))
                 throw new Exception("Назва категорії не може бути порожньою");
 
-            var existing = await _categoryRepository.GetByIdAsync(category.CategoryId);
+            var existing = await _categoryRepository.GetByIdAsync(id);
             if (existing == null)
                 throw new Exception("Категорія не знайдена");
 
-            existing.Name = category.Name;
+            existing.Name = categoryDto.Name;
             await _categoryRepository.UpdateAsync(existing);
+            return _mapper.Map<CategoryDtoResponse>(existing);
         }
 
         public async Task DeleteCategoryAsync(int id)

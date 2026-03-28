@@ -18,7 +18,7 @@ namespace LabsTRVD.Entities
         [MaxLength(50)]
         public string Role { get; set; } = "User";
         public bool IsBlocked { get; set; } = false;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? LastLoginAt { get; set; }
         public ICollection<Expense> Expenses { get; set; } = new List<Expense>();
         public ICollection<Income> Incomes { get; set; } = new List<Income>();

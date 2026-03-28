@@ -1,6 +1,7 @@
 ﻿// Controllers/AuthController.cs
-using LabsTRVD.DTOs;
-using LabsTRVD.Interfaces;
+using LabsTRVD.DTOs.AuthDTOs;
+using LabsTRVD.Interfaces.Role;
+using LabsTRVD.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LabsTRVD.Controllers;

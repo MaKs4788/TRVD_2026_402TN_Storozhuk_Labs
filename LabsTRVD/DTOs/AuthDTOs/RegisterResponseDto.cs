@@ -1,4 +1,4 @@
-﻿namespace LabsTRVD.DTOs
+﻿namespace LabsTRVD.DTOs.AuthDTOs
 {
     public class RegisterResponseDto
     {

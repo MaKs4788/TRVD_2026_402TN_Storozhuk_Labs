@@ -1,65 +1,81 @@
-﻿using LabsTRVD.Entities;
-using LabsTRVD.Repositories.Interfaces;
-using LabsTRVD.Services.Interfaces;
+﻿using AutoMapper;
+using LabsTRVD.DTOs.ServicesDTOs;
+using LabsTRVD.Entities;
+using LabsTRVD.Interfaces.Repositories;
+using LabsTRVD.Interfaces.Services;
 
 namespace LabsTRVD.Services
 {
     public class ExpenseService : IExpenseService
     {
         private readonly IExpenseRepository _expenseRepository;
+        private readonly IMapper _mapper;
 
-        public ExpenseService(IExpenseRepository expenseRepository)
+        public ExpenseService(IExpenseRepository expenseRepository, IMapper mapper)
         {
             _expenseRepository = expenseRepository;
+            _mapper = mapper;
         }
 
-        public async Task<IEnumerable<Expense>> GetUserExpensesAsync(Guid userId)
+        public async Task<IEnumerable<ExpenseDtoResponse>> GetUserExpensesAsync(Guid userId)
         {
-            return await _expenseRepository.GetByUserAsync(userId);
+            var expenses = await _expenseRepository.GetByUserAsync(userId);
+            return _mapper.Map<IEnumerable<ExpenseDtoResponse>>(expenses);
         }
 
-        public async Task<IEnumerable<Expense>> GetByPeriodAsync(Guid userId, DateTime from, DateTime to)
+        public async Task<IEnumerable<ExpenseDtoResponse>> GetByPeriodAsync(Guid userId, DateTime from, DateTime to)
         {
-            return await _expenseRepository.FindAsync(e =>
+            var expenses = await _expenseRepository.FindAsync(e =>
                 e.UserId == userId &&
                 e.Date >= from &&
                 e.Date <= to);
+            return _mapper.Map<IEnumerable<ExpenseDtoResponse>>(expenses);
         }
 
-        public async Task<Expense?> GetByIdAsync(int id)
+        public async Task<ExpenseDtoResponse?> GetByIdAsync(int id)
         {
-            return await _expenseRepository.GetByIdAsync(id);
+            var expense = await _expenseRepository.GetByIdAsync(id);
+            return expense == null ? null : _mapper.Map<ExpenseDtoResponse>(expense);
         }
 
-        public async Task AddExpenseAsync(Expense expense)
+        public async Task<ExpenseDtoResponse> AddExpenseAsync(ExpenseDto expenseDto)
         {
-            if (expense.Amount <= 0)
+            if (expenseDto.Amount <= 0)
                 throw new Exception("Сума повинна бути більше 0");
 
-            if (expense.UserId == Guid.Empty)
+            if (expenseDto.UserId == Guid.Empty)
                 throw new Exception("UserId не вказаний");
 
+            var expense = _mapper.Map<Expense>(expenseDto);
             if (expense.Date == default)
-                expense.Date = DateTime.UtcNow;
+                expense.Date = DateTime.Now;
+
+            // Трактуємо CategoryId = 0 як null (без категорії)
+            if (expense.CategoryId == 0)
+                expense.CategoryId = null;
 
             await _expenseRepository.AddAsync(expense);
+            return _mapper.Map<ExpenseDtoResponse>(expense);
         }
 
-        public async Task UpdateExpenseAsync(Expense expense)
+        public async Task<ExpenseDtoResponse> UpdateExpenseAsync(int id, ExpenseDto expenseDto)
         {
-            if (expense.Amount <= 0)
+            if (expenseDto.Amount <= 0)
                 throw new Exception("Сума повинна бути більше 0");
 
-            var existing = await _expenseRepository.GetByIdAsync(expense.ExpenseId);
+            var existing = await _expenseRepository.GetByIdAsync(id);
             if (existing == null)
                 throw new Exception("Витрата не знайдена");
 
-            existing.Amount = expense.Amount;
-            existing.CategoryId = expense.CategoryId;
-            existing.Date = expense.Date;
-            existing.Description = expense.Description;
+            existing.Amount = expenseDto.Amount;
+            existing.Date = expenseDto.Date;
+            existing.Description = expenseDto.Description;
+
+            // Трактуємо CategoryId = 0 як null (без категорії)
+            existing.CategoryId = expenseDto.CategoryId == 0 ? null : expenseDto.CategoryId;
 
             await _expenseRepository.UpdateAsync(existing);
+            return _mapper.Map<ExpenseDtoResponse>(existing);
         }
 
         public async Task DeleteExpenseAsync(int id)
@@ -73,17 +89,22 @@ namespace LabsTRVD.Services
 
         public async Task<decimal> GetTotalForPeriodAsync(Guid userId, DateTime from, DateTime to)
         {
-            var expenses = await GetByPeriodAsync(userId, from, to);
+            var expenses = await _expenseRepository.FindAsync(e =>
+                e.UserId == userId &&
+                e.Date >= from &&
+                e.Date <= to);
             return expenses.Sum(e => e.Amount);
         }
+
         public async Task<decimal> GetTotalCurrentMonthAsync(Guid userId)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var from = new DateTime(now.Year, now.Month, 1);
             var to = from.AddMonths(1).AddTicks(-1);
 
             return await GetTotalForPeriodAsync(userId, from, to);
         }
+
         public async Task<decimal> GetTotalAsync(Guid userId)
         {
             var expenses = await _expenseRepository.GetByUserAsync(userId);

@@ -1,65 +1,80 @@
-﻿using LabsTRVD.Entities;
-using LabsTRVD.Repositories.Interfaces;
-using LabsTRVD.Services.Interfaces;
+﻿using AutoMapper;
+using LabsTRVD.DTOs.ServicesDTOs;
+using LabsTRVD.Entities;
+using LabsTRVD.Interfaces.Services;
 
 namespace LabsTRVD.Services
 {
     public class IncomeService : IIncomeService
     {
         private readonly IRepository<Income> _incomeRepository;
+        private readonly IMapper _mapper;
 
-        public IncomeService(IRepository<Income> incomeRepository)
+        public IncomeService(IRepository<Income> incomeRepository, IMapper mapper)
         {
             _incomeRepository = incomeRepository;
+            _mapper = mapper;
         }
 
-        public async Task<IEnumerable<Income>> GetUserIncomesAsync(Guid userId)
+        public async Task<IEnumerable<IncomeDtoResponse>> GetUserIncomesAsync(Guid userId)
         {
-            return await _incomeRepository.FindAsync(i => i.UserId == userId);
+            var incomes = await _incomeRepository.FindAsync(i => i.UserId == userId);
+            return _mapper.Map<IEnumerable<IncomeDtoResponse>>(incomes);
         }
 
-        public async Task<IEnumerable<Income>> GetByPeriodAsync(Guid userId, DateTime from, DateTime to)
+        public async Task<IEnumerable<IncomeDtoResponse>> GetByPeriodAsync(Guid userId, DateTime from, DateTime to)
         {
-            return await _incomeRepository.FindAsync(i =>
+            var incomes = await _incomeRepository.FindAsync(i =>
                 i.UserId == userId &&
                 i.Date >= from &&
                 i.Date <= to);
+            return _mapper.Map<IEnumerable<IncomeDtoResponse>>(incomes);
         }
 
-        public async Task<Income?> GetByIdAsync(int id)
+        public async Task<IncomeDtoResponse?> GetByIdAsync(int id)
         {
-            return await _incomeRepository.GetByIdAsync(id);
+            var income = await _incomeRepository.GetByIdAsync(id);
+            return income == null ? null : _mapper.Map<IncomeDtoResponse>(income);
         }
 
-        public async Task AddIncomeAsync(Income income)
+        public async Task<IncomeDtoResponse> AddIncomeAsync(IncomeDto incomeDto)
         {
-            if (income.Amount <= 0)
+            if (incomeDto.Amount <= 0)
                 throw new Exception("Сума доходу повинна бути більше 0");
 
-            if (income.UserId == Guid.Empty)
+            if (incomeDto.UserId == Guid.Empty)
                 throw new Exception("UserId не вказаний");
 
+            var income = _mapper.Map<Income>(incomeDto);
             if (income.Date == default)
-                income.Date = DateTime.UtcNow;
+                income.Date = DateTime.Now;
+
+            // Трактуємо CategoryId = 0 як null (без категорії)
+            if (income.CategoryId == 0)
+                income.CategoryId = null;
 
             await _incomeRepository.AddAsync(income);
+            return _mapper.Map<IncomeDtoResponse>(income);
         }
 
-        public async Task UpdateIncomeAsync(Income income)
+        public async Task<IncomeDtoResponse> UpdateIncomeAsync(int id, IncomeDto incomeDto)
         {
-            if (income.Amount <= 0)
+            if (incomeDto.Amount <= 0)
                 throw new Exception("Сума доходу повинна бути більше 0");
 
-            var existing = await _incomeRepository.GetByIdAsync(income.IncomeId);
+            var existing = await _incomeRepository.GetByIdAsync(id);
             if (existing == null)
                 throw new Exception("Дохід не знайдено");
 
-            existing.Amount = income.Amount;
-            existing.Date = income.Date;
-            existing.Description = income.Description;
-            existing.CategoryId = income.CategoryId;
+            existing.Amount = incomeDto.Amount;
+            existing.Date = incomeDto.Date;
+            existing.Description = incomeDto.Description;
+
+            // Трактуємо CategoryId = 0 як null (без категорії)
+            existing.CategoryId = incomeDto.CategoryId == 0 ? null : incomeDto.CategoryId;
 
             await _incomeRepository.UpdateAsync(existing);
+            return _mapper.Map<IncomeDtoResponse>(existing);
         }
 
         public async Task DeleteIncomeAsync(int id)
@@ -73,13 +88,16 @@ namespace LabsTRVD.Services
 
         public async Task<decimal> GetTotalForPeriodAsync(Guid userId, DateTime from, DateTime to)
         {
-            var incomes = await GetByPeriodAsync(userId, from, to);
+            var incomes = await _incomeRepository.FindAsync(i =>
+                i.UserId == userId &&
+                i.Date >= from &&
+                i.Date <= to);
             return incomes.Sum(i => i.Amount);
         }
 
         public async Task<decimal> GetTotalCurrentMonthAsync(Guid userId)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var from = new DateTime(now.Year, now.Month, 1);
             var to = from.AddMonths(1).AddTicks(-1);
 

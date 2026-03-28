@@ -1,9 +1,9 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace LabsTRVD.DTOs
+namespace LabsTRVD.DTOs.ServicesDTOs
 {
-    public class ExpenseDto
+    public class IncomeDto
     {
         [Required(ErrorMessage = "Сума обов'язкова")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Сума повинна бути більше 0")]
@@ -15,6 +15,8 @@ namespace LabsTRVD.DTOs
         [Required(ErrorMessage = "UserId обов'язковий")]
         public Guid UserId { get; set; }
 
+        // CategoryId = 0 або null означає "без категорії"
+        // CategoryId > 0 означає конкретну категорію
         public int? CategoryId { get; set; }
 
         [StringLength(250, ErrorMessage = "Опис не може бути довше 250 символів")]

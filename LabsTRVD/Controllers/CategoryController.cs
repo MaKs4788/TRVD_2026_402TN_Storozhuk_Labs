@@ -1,7 +1,5 @@
-﻿using AutoMapper;
-using LabsTRVD.DTOs;
-using LabsTRVD.Entities;
-using LabsTRVD.Services.Interfaces;
+﻿using LabsTRVD.DTOs.ServicesDTOs;
+using LabsTRVD.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,32 +11,28 @@ namespace LabsTRVD.Controllers
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
-        private readonly IMapper _mapper;
 
-        public CategoryController(ICategoryService categoryService, IMapper mapper)
+        public CategoryController(ICategoryService categoryService)
         {
             _categoryService = categoryService;
-            _mapper = mapper;
         }
 
         // GET: api/Category?userId=...
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetUserCategories([FromQuery] Guid userId)
+        public async Task<ActionResult<IEnumerable<CategoryDtoResponse>>> GetUserCategories([FromQuery] Guid userId)
         {
-            var categories = await _categoryService.GetUserCategoriesAsync(userId);
-            var dtos = _mapper.Map<IEnumerable<CategoryDto>>(categories);
+            var dtos = await _categoryService.GetUserCategoriesAsync(userId);
             return Ok(dtos);
         }
 
         // GET: api/Category/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<CategoryDto>> GetCategory(int id)
+        public async Task<ActionResult<CategoryDtoResponse>> GetCategory(int id)
         {
             var category = await _categoryService.GetByIdAsync(id);
             if (category == null) return NotFound();
 
-            var dto = _mapper.Map<CategoryDto>(category);
-            return Ok(dto);
+            return Ok(category);
         }
 
         // POST: api/Category
@@ -47,9 +41,8 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                var category = _mapper.Map<Category>(dto);
-                await _categoryService.AddCategoryAsync(category);
-                return CreatedAtAction(nameof(GetCategory), new { id = category.CategoryId }, dto);
+                var result = await _categoryService.AddCategoryAsync(dto);
+                return CreatedAtAction(nameof(GetCategory), new { id = result.CategoryId }, result);
             }
             catch (Exception ex)
             {
@@ -63,10 +56,8 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                var category = _mapper.Map<Category>(dto);
-                category.CategoryId = id;
-                await _categoryService.UpdateCategoryAsync(category);
-                return Ok(dto);
+                var result = await _categoryService.UpdateCategoryAsync(id, dto);
+                return Ok(result);
             }
             catch (Exception ex)
             {

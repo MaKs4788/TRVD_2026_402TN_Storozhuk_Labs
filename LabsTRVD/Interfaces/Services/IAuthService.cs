@@ -1,6 +1,6 @@
-﻿using LabsTRVD.DTOs;
+﻿using LabsTRVD.DTOs.AuthDTOs;
 
-namespace LabsTRVD.Interfaces
+namespace LabsTRVD.Interfaces.Services
 {
     public interface IAuthService
     {

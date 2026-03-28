@@ -1,5 +1,5 @@
 ﻿using LabsTRVD.Data;
-using LabsTRVD.Repositories.Interfaces;
+using LabsTRVD.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 

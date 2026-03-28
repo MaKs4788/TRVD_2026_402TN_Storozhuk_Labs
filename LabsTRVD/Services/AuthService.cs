@@ -1,8 +1,6 @@
-﻿
-using LabsTRVD.DTOs;
+using LabsTRVD.DTOs.AuthDTOs;
 using LabsTRVD.Entities;
-using LabsTRVD.Interfaces;
-using LabsTRVD.Repositories.Interfaces;
+using LabsTRVD.Interfaces.Services;
 using LabsTRVD.Settings;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -29,9 +27,15 @@ public class AuthService : IAuthService
         var user = users.FirstOrDefault()
             ?? throw new UnauthorizedAccessException("Невірний email або пароль.");
 
+        if (user.IsBlocked)
+            throw new UnauthorizedAccessException("Ваш облік заблокований адміністратором. Зв'яжіться з підтримкою.");
+
         bool isValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
         if (!isValid)
             throw new UnauthorizedAccessException("Невірний email або пароль.");
+
+        user.LastLoginAt = DateTime.Now;
+        await _userRepository.UpdateAsync(user);
 
         string token = GenerateJwtToken(user);
 
@@ -61,7 +65,7 @@ public class AuthService : IAuthService
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes), // ✅ термін дії
+            expires: DateTime.Now.AddMinutes(_jwtSettings.ExpiryMinutes), // ✅ термін дії
             signingCredentials: creds
         );
 
