@@ -49,7 +49,6 @@ namespace LabsTRVD.Services
             if (income.Date == default)
                 income.Date = DateTime.Now;
 
-            // Трактуємо CategoryId = 0 як null (без категорії)
             if (income.CategoryId == 0)
                 income.CategoryId = null;
 
@@ -69,8 +68,6 @@ namespace LabsTRVD.Services
             existing.Amount = incomeDto.Amount;
             existing.Date = incomeDto.Date;
             existing.Description = incomeDto.Description;
-
-            // Трактуємо CategoryId = 0 як null (без категорії)
             existing.CategoryId = incomeDto.CategoryId == 0 ? null : incomeDto.CategoryId;
 
             await _incomeRepository.UpdateAsync(existing);

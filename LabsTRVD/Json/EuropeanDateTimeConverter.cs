@@ -27,8 +27,6 @@ namespace LabsTRVD.Json
             {
                 return DateTime.SpecifyKind(result, DateTimeKind.Local);
             }
-
-            // Якщо не получилось, спробуємо ISO формат
             if (DateTime.TryParse(
                 dateString,
                 CultureInfo.InvariantCulture,

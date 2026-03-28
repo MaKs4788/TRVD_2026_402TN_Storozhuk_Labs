@@ -78,8 +78,6 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-
-// Controllers з форматуванням дат у європейському форматі (dd.MM.yyyy HH:mm:ss)
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -88,7 +86,6 @@ builder.Services.AddControllers()
         jsonOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         jsonOptions.WriteIndented = false;
 
-        // ✅ Додаємо конвертори для дат (порядок важливий!)
         jsonOptions.Converters.Add(new EuropeanDateTimeConverter());
         jsonOptions.Converters.Add(new EuropeanNullableDateTimeConverter());
         jsonOptions.Converters.Add(new JsonStringEnumConverter());
@@ -148,7 +145,7 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
 
     if (!db.Users.Any(u => u.Email == "test@example.com"))
     {

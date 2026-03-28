@@ -50,7 +50,6 @@ namespace LabsTRVD.Services
             if (expense.Date == default)
                 expense.Date = DateTime.Now;
 
-            // Трактуємо CategoryId = 0 як null (без категорії)
             if (expense.CategoryId == 0)
                 expense.CategoryId = null;
 

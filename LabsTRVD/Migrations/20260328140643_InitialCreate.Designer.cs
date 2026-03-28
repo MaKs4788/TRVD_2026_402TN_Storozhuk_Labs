@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LabsTRVD.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260326202941_InitialCreate")]
+    [Migration("20260328140643_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -130,6 +130,39 @@ namespace LabsTRVD.Migrations
                     b.ToTable("Incomes");
                 });
 
+            modelBuilder.Entity("LabsTRVD.Entities.RefreshToken", b =>
+                {
+                    b.Property<Guid>("RefreshTokenId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("RefreshTokenId");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("LabsTRVD.Entities.User", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -223,6 +256,17 @@ namespace LabsTRVD.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("LabsTRVD.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("LabsTRVD.Entities.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("LabsTRVD.Entities.Category", b =>
                 {
                     b.Navigation("Expenses");
@@ -237,6 +281,8 @@ namespace LabsTRVD.Migrations
                     b.Navigation("Expenses");
 
                     b.Navigation("Incomes");
+
+                    b.Navigation("RefreshTokens");
                 });
 #pragma warning restore 612, 618
         }

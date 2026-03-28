@@ -24,5 +24,6 @@ namespace LabsTRVD.Entities
         public ICollection<Income> Incomes { get; set; } = new List<Income>();
         public ICollection<Category> Categories { get; set; } = new List<Category>();
         public ICollection<Budget> Budgets { get; set; } = new List<Budget>();
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }
 }

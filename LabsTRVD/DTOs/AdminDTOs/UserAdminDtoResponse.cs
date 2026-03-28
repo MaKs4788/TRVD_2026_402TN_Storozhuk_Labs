@@ -1,8 +1,5 @@
 namespace LabsTRVD.DTOs.AdminDTOs
 {
-    /// <summary>
-    /// DTO для адміністратора (без чутливих даних)
-    /// </summary>
     public class UserAdminDtoResponse
     {
         public Guid UserId { get; set; }
