@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
-using LabsTRVD.DTOs;
+using LabsTRVD.DTOs.AdminDTOs;
+using LabsTRVD.DTOs.ServicesDTOs;
 using LabsTRVD.Entities;
 
 namespace LabsTRVD.Mapping
@@ -8,26 +9,29 @@ namespace LabsTRVD.Mapping
     {
         public MappingProfile()
         {
-            // Income <-> IncomeDto
-            CreateMap<Income, IncomeDto>()
-                .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.CategoryId))
-                .ReverseMap()
-                .ForMember(dest => dest.Category, opt => opt.Ignore()); // не мапимо навігаційне поле
+            // Income mappings
+            CreateMap<Income, IncomeDtoResponse>().ReverseMap();
+            CreateMap<IncomeDto, Income>()
+                .ForMember(dest => dest.IncomeId, opt => opt.Ignore()); // ID генерується на сервері
 
-            // Expense <-> ExpenseDto
-            CreateMap<Expense, ExpenseDto>()
-                .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.CategoryId ?? 0)) // null -> 0 або можна nullable у DTO
-                .ReverseMap()
-                .ForMember(dest => dest.Category, opt => opt.Ignore());
+            // Expense mappings
+            CreateMap<Expense, ExpenseDtoResponse>().ReverseMap();
+            CreateMap<ExpenseDto, Expense>()
+                .ForMember(dest => dest.ExpenseId, opt => opt.Ignore()); // ID генерується на сервері
 
-            // Category <-> CategoryDto
-            CreateMap<Category, CategoryDto>().ReverseMap();
+            // Category mappings
+            CreateMap<Category, CategoryDtoResponse>().ReverseMap();
+            CreateMap<CategoryDto, Category>()
+                .ForMember(dest => dest.CategoryId, opt => opt.Ignore()); // ID генерується на сервері
 
-            // Budget <-> BudgetDto
+            // Budget mappings
             CreateMap<Budget, BudgetDto>().ReverseMap();
 
-            // DashboardSummary (тільки з DTO, тож прямого мапінгу може і не треба)
+            // Dashboard summary mapping
             CreateMap<DashboardSummaryDto, DashboardSummaryDto>().ReverseMap();
+
+            // User mappings for Admin
+            CreateMap<User, UserAdminDtoResponse>();
         }
     }
 }

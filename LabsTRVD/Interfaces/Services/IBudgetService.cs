@@ -1,6 +1,6 @@
 ﻿using LabsTRVD.Entities;
 
-namespace LabsTRVD.Services.Interfaces
+namespace LabsTRVD.Interfaces.Services
 {
     public interface IBudgetService
     {

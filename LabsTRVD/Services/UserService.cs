@@ -1,8 +1,7 @@
 ﻿// Services/UserService.cs
-using LabsTRVD.DTOs;
+using LabsTRVD.DTOs.AuthDTOs;
 using LabsTRVD.Entities;
-using LabsTRVD.Interfaces;
-using LabsTRVD.Repositories.Interfaces;
+using LabsTRVD.Interfaces.Role;
 
 namespace LabsTRVD.Services;
 
@@ -28,7 +27,7 @@ public class UserService : IUserService
             Email = dto.Email,
             PasswordHash = passwordHash,
             Role = "User",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         await _userRepository.AddAsync(user);

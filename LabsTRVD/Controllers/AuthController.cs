@@ -1,7 +1,9 @@
-﻿// Controllers/AuthController.cs
-using LabsTRVD.DTOs;
-using LabsTRVD.Interfaces;
+﻿using LabsTRVD.DTOs.AuthDTOs;
+using LabsTRVD.Interfaces.Role;
+using LabsTRVD.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 namespace LabsTRVD.Controllers;
 
@@ -27,7 +29,6 @@ public class AuthController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         try
         {
             var result = await _userService.RegisterAsync(dto);
@@ -47,13 +48,55 @@ public class AuthController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
         try
         {
             var result = await _authService.SignInAsync(dto);
             return Ok(result);
         }
         catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Оновлення пари токенів через Refresh Token</summary>
+    [HttpPost("refresh")]
+    [ProducesResponseType(typeof(AuthResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto dto) // 👇 ДОДАНО
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+        try
+        {
+            var result = await _authService.RefreshTokenAsync(dto);
+            return Ok(result);
+        }
+        catch (SecurityTokenException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Вихід — відкликання Refresh Token</summary>
+    [HttpPost("revoke")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Revoke([FromBody] RevokeTokenRequestDto dto) // 👇 ДОДАНО
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+        try
+        {
+            await _authService.RevokeTokenAsync(dto);
+            return NoContent();
+        }
+        catch (SecurityTokenException ex)
         {
             return Unauthorized(new { message = ex.Message });
         }

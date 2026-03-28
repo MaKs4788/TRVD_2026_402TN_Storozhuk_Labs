@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace LabsTRVD.DTOs
+namespace LabsTRVD.DTOs.AuthDTOs
 {
     public class RegisterRequestDto
     {
@@ -9,7 +9,7 @@ namespace LabsTRVD.DTOs
         public string Email { get; set; } = string.Empty;
 
         [Required]
-        [MinLength(6)]
+        [MinLength(8, ErrorMessage = "Пароль повинен містити мінімум 8 символів")]
         public string Password { get; set; } = string.Empty;
     }
 }

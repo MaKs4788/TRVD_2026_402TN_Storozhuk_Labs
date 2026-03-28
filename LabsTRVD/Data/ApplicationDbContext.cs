@@ -10,6 +10,7 @@ namespace LabsTRVD.Data
         public DbSet<Income> Incomes { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Budget> Budgets { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -20,7 +21,6 @@ namespace LabsTRVD.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Budget — унікальний індекс на місяць/рік для кожного користувача
             modelBuilder.Entity<Budget>()
                 .HasIndex(b => new { b.UserId, b.Month, b.Year })
                 .IsUnique();
@@ -53,7 +53,6 @@ namespace LabsTRVD.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Category
-            // Category
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.HasKey(c => c.CategoryId);
@@ -85,6 +84,23 @@ namespace LabsTRVD.Data
                 .HasForeignKey(i => i.CategoryId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasKey(rt => rt.RefreshTokenId);
+
+                entity.Property(rt => rt.Token)
+                      .IsRequired()
+                      .HasMaxLength(512);
+
+                entity.HasIndex(rt => rt.Token)
+                      .IsUnique();
+
+                entity.HasOne(rt => rt.User)
+                      .WithMany(u => u.RefreshTokens)
+                      .HasForeignKey(rt => rt.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

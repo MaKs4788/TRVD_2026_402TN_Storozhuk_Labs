@@ -1,7 +1,7 @@
-﻿using LabsTRVD.DTOs;
+﻿using LabsTRVD.DTOs.AuthDTOs;
 using LabsTRVD.Entities;
 
-namespace LabsTRVD.Interfaces
+namespace LabsTRVD.Interfaces.Role
 {
     public interface IUserService
     {

@@ -1,6 +1,6 @@
 ﻿using LabsTRVD.Entities;
 
-namespace LabsTRVD.Repositories.Interfaces
+namespace LabsTRVD.Interfaces.Repositories
 {
     public interface IExpenseRepository: IRepository<Expense>
     {

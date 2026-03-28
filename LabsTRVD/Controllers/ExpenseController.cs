@@ -1,9 +1,8 @@
-﻿using AutoMapper;
-using LabsTRVD.DTOs;
-using LabsTRVD.Entities;
-using LabsTRVD.Services.Interfaces;
+﻿using LabsTRVD.DTOs.ServicesDTOs;
+using LabsTRVD.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LabsTRVD.Controllers
 {
@@ -13,20 +12,17 @@ namespace LabsTRVD.Controllers
     public class ExpenseController : ControllerBase
     {
         private readonly IExpenseService _expenseService;
-        private readonly IMapper _mapper;
 
-        public ExpenseController(IExpenseService expenseService, IMapper mapper)
+        public ExpenseController(IExpenseService expenseService)
         {
             _expenseService = expenseService;
-            _mapper = mapper;
         }
 
         // GET: api/Expense/user/{userId}
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetUserExpenses(Guid userId)
         {
-            var expenses = await _expenseService.GetUserExpensesAsync(userId);
-            var dtos = _mapper.Map<List<ExpenseDto>>(expenses);
+            var dtos = await _expenseService.GetUserExpensesAsync(userId);
             return Ok(dtos);
         }
 
@@ -37,8 +33,7 @@ namespace LabsTRVD.Controllers
             var expense = await _expenseService.GetByIdAsync(id);
             if (expense == null) return NotFound();
 
-            var dto = _mapper.Map<ExpenseDto>(expense);
-            return Ok(dto);
+            return Ok(expense);
         }
 
         // POST: api/Expense
@@ -47,15 +42,33 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                var expense = _mapper.Map<Expense>(dto);
-                await _expenseService.AddExpenseAsync(expense);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-                var resultDto = _mapper.Map<ExpenseDto>(expense);
-                return CreatedAtAction(nameof(GetById), new { id = expense.ExpenseId }, resultDto);
+                var result = await _expenseService.AddExpenseAsync(dto);
+                return CreatedAtAction(nameof(GetById), new { id = result.ExpenseId }, result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message, error = "Validation Error" });
+            }
+            catch (DbUpdateException ex)
+            {
+                return BadRequest(new 
+                { 
+                    message = "Помилка при збереженні в базі даних",
+                    details = ex.InnerException?.Message ?? ex.Message,
+                    error = "Database Error"
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return StatusCode(500, new 
+                { 
+                    message = ex.Message,
+                    error = ex.GetType().Name,
+                    stackTrace = ex.StackTrace
+                });
             }
         }
 
@@ -65,13 +78,8 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                var expense = _mapper.Map<Expense>(dto);
-                expense.ExpenseId = id;
-
-                await _expenseService.UpdateExpenseAsync(expense);
-
-                var resultDto = _mapper.Map<ExpenseDto>(expense);
-                return Ok(resultDto);
+                var result = await _expenseService.UpdateExpenseAsync(id, dto);
+                return Ok(result);
             }
             catch (Exception ex)
             {

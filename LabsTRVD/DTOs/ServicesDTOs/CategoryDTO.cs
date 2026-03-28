@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace LabsTRVD.DTOs
+namespace LabsTRVD.DTOs.ServicesDTOs
 {
     public class CategoryDto
     {

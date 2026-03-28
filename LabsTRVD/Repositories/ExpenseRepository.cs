@@ -1,6 +1,6 @@
 ﻿using LabsTRVD.Data;
 using LabsTRVD.Entities;
-using LabsTRVD.Repositories.Interfaces;
+using LabsTRVD.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace LabsTRVD.Repositories

@@ -1,9 +1,8 @@
-﻿using AutoMapper;
-using LabsTRVD.DTOs;
-using LabsTRVD.Entities;
-using LabsTRVD.Services.Interfaces;
+﻿using LabsTRVD.DTOs.ServicesDTOs;
+using LabsTRVD.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LabsTRVD.Controllers
 {
@@ -13,30 +12,27 @@ namespace LabsTRVD.Controllers
     public class IncomeController : ControllerBase
     {
         private readonly IIncomeService _incomeService;
-        private readonly IMapper _mapper;
 
-        public IncomeController(IIncomeService incomeService, IMapper mapper)
+        public IncomeController(IIncomeService incomeService)
         {
             _incomeService = incomeService;
-            _mapper = mapper;
         }
 
         // GET: api/Income?userId=...
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<IncomeDto>>> GetUserIncomes([FromQuery] Guid userId)
+        public async Task<ActionResult<IEnumerable<IncomeDtoResponse>>> GetUserIncomes([FromQuery] Guid userId)
         {
-            var incomes = await _incomeService.GetUserIncomesAsync(userId);
-            var dtos = _mapper.Map<List<IncomeDto>>(incomes);
+            var dtos = await _incomeService.GetUserIncomesAsync(userId);
             return Ok(dtos);
         }
 
         // GET: api/Income/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<IncomeDto>> GetIncome(int id)
+        public async Task<ActionResult<IncomeDtoResponse>> GetIncome(int id)
         {
             var income = await _incomeService.GetByIdAsync(id);
             if (income == null) return NotFound();
-            return Ok(_mapper.Map<IncomeDto>(income));
+            return Ok(income);
         }
 
         // POST: api/Income
@@ -45,13 +41,33 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                var income = _mapper.Map<Income>(dto);
-                await _incomeService.AddIncomeAsync(income);
-                return CreatedAtAction(nameof(GetIncome), new { id = income.IncomeId }, _mapper.Map<IncomeDto>(income));
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var result = await _incomeService.AddIncomeAsync(dto);
+                return CreatedAtAction(nameof(GetIncome), new { id = result.IncomeId }, result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message, error = "Validation Error" });
+            }
+            catch (DbUpdateException ex)
+            {
+                return BadRequest(new 
+                { 
+                    message = "Помилка при збереженні в базі даних",
+                    details = ex.InnerException?.Message ?? ex.Message,
+                    error = "Database Error"
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return StatusCode(500, new 
+                { 
+                    message = ex.Message,
+                    error = ex.GetType().Name,
+                    stackTrace = ex.StackTrace
+                });
             }
         }
 
@@ -61,10 +77,8 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                var income = _mapper.Map<Income>(dto);
-                income.IncomeId = id;
-                await _incomeService.UpdateIncomeAsync(income);
-                return Ok(_mapper.Map<IncomeDto>(income));
+                var result = await _incomeService.UpdateIncomeAsync(id, dto);
+                return Ok(result);
             }
             catch (Exception ex)
             {

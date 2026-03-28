@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace LabsTRVD.DTOs
+namespace LabsTRVD.DTOs.AuthDTOs
 {
     public class SignInDto
     {

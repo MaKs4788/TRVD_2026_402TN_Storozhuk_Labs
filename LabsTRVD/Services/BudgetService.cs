@@ -1,6 +1,5 @@
 ﻿using LabsTRVD.Entities;
-using LabsTRVD.Repositories.Interfaces;
-using LabsTRVD.Services.Interfaces;
+using LabsTRVD.Interfaces.Services;
 
 namespace LabsTRVD.Services
 {

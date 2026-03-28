@@ -2,18 +2,21 @@
 using LabsTRVD;
 using LabsTRVD.Components;
 using LabsTRVD.Data;
-using LabsTRVD.Interfaces;
+using LabsTRVD.Interfaces.Repositories;
+using LabsTRVD.Interfaces.Role;
+using LabsTRVD.Interfaces.Services;
+using LabsTRVD.Json;
 using LabsTRVD.Mapping;
 using LabsTRVD.Repositories;
-using LabsTRVD.Repositories.Interfaces;
 using LabsTRVD.Services;
-using LabsTRVD.Services.Interfaces;
 using LabsTRVD.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +39,7 @@ builder.Services.AddScoped<IIncomeService, IncomeService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(cfg =>
@@ -74,9 +78,18 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        var jsonOptions = options.JsonSerializerOptions;
+        jsonOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        jsonOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        jsonOptions.WriteIndented = false;
 
-// Controllers
-builder.Services.AddControllers();
+        jsonOptions.Converters.Add(new EuropeanDateTimeConverter());
+        jsonOptions.Converters.Add(new EuropeanNullableDateTimeConverter());
+        jsonOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 
 // Swagger
@@ -132,7 +145,7 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.EnsureCreated();
+    db.Database.Migrate();
 
     if (!db.Users.Any(u => u.Email == "test@example.com"))
     {

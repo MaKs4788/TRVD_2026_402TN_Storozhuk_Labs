@@ -1,5 +1,6 @@
 ﻿using LabsTRVD.DTOs;
-using LabsTRVD.Services.Interfaces;
+using LabsTRVD.DTOs.ServicesDTOs;
+using LabsTRVD.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
