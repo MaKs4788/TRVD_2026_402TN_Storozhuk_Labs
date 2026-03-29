@@ -24,61 +24,64 @@ namespace LabsTRVD.Services
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<CategoryDtoResponse>> GetUserCategoriesAsync(Guid userId)
+        public async Task<IEnumerable<CategoryDtoResponse>> GetUserCategoriesAsync(Guid currentUserId)
         {
-            var categories = await _categoryRepository.FindAsync(c => c.UserId == userId);
+            var categories = await _categoryRepository.FindAsync(c => c.UserId == currentUserId);
             return _mapper.Map<IEnumerable<CategoryDtoResponse>>(categories);
         }
 
-        public async Task<CategoryDtoResponse?> GetByIdAsync(int id)
+        public async Task<CategoryDtoResponse?> GetByIdAsync(int id, Guid currentUserId)
         {
             var category = await _categoryRepository.GetByIdAsync(id);
-            return category == null ? null : _mapper.Map<CategoryDtoResponse>(category);
+            if (category == null || category.UserId != currentUserId)
+                return null;
+            return _mapper.Map<CategoryDtoResponse>(category);
         }
 
-        public async Task<CategoryDtoResponse> AddCategoryAsync(CategoryDto categoryDto)
+        public async Task<CategoryDtoResponse> AddCategoryAsync(CategoryDto categoryDto, Guid currentUserId)
         {
             if (string.IsNullOrWhiteSpace(categoryDto.Name))
                 throw new Exception("Назва категорії не може бути порожньою");
 
             var category = _mapper.Map<Category>(categoryDto);
+            category.UserId = currentUserId;   // прив'язуємо до поточного користувача
             await _categoryRepository.AddAsync(category);
             return _mapper.Map<CategoryDtoResponse>(category);
         }
 
-        public async Task<CategoryDtoResponse> UpdateCategoryAsync(int id, CategoryDto categoryDto)
+        public async Task<CategoryDtoResponse> UpdateCategoryAsync(int id, CategoryDto categoryDto, Guid currentUserId)
         {
             if (string.IsNullOrWhiteSpace(categoryDto.Name))
                 throw new Exception("Назва категорії не може бути порожньою");
 
             var existing = await _categoryRepository.GetByIdAsync(id);
-            if (existing == null)
-                throw new Exception("Категорія не знайдена");
+            if (existing == null || existing.UserId != currentUserId)
+                throw new Exception("Категорія не знайдена або доступ заборонено");
 
             existing.Name = categoryDto.Name;
             await _categoryRepository.UpdateAsync(existing);
             return _mapper.Map<CategoryDtoResponse>(existing);
         }
 
-        public async Task DeleteCategoryAsync(int id)
+        public async Task DeleteCategoryAsync(int id, Guid currentUserId)
         {
             var category = await _categoryRepository.GetByIdAsync(id);
-            if (category == null)
-                throw new Exception("Категорія не знайдена");
+            if (category == null || category.UserId != currentUserId)
+                throw new Exception("Категорія не знайдена або доступ заборонено");
 
-            bool used = await IsCategoryUsedAsync(id);
+            bool used = await IsCategoryUsedAsync(id, currentUserId);
             if (used)
                 throw new Exception("Категорія використовується у доходах або витратах");
 
             await _categoryRepository.DeleteAsync(category);
         }
 
-        public async Task<bool> IsCategoryUsedAsync(int categoryId)
+        public async Task<bool> IsCategoryUsedAsync(int categoryId, Guid currentUserId)
         {
-            var expenses = await _expenseRepository.FindAsync(e => e.CategoryId == categoryId);
+            var expenses = await _expenseRepository.FindAsync(e => e.CategoryId == categoryId && e.UserId == currentUserId);
             if (expenses.Any()) return true;
 
-            var incomes = await _incomeRepository.FindAsync(i => i.CategoryId == categoryId);
+            var incomes = await _incomeRepository.FindAsync(i => i.CategoryId == categoryId && i.UserId == currentUserId);
             return incomes.Any();
         }
     }

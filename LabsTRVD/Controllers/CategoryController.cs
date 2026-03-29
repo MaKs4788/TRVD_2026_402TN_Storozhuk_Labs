@@ -1,4 +1,5 @@
 ﻿using LabsTRVD.DTOs.ServicesDTOs;
+using LabsTRVD.Extensions;
 using LabsTRVD.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,17 +12,18 @@ namespace LabsTRVD.Controllers
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
+        private Guid CurrentUserId => User.GetUserId();
 
         public CategoryController(ICategoryService categoryService)
         {
             _categoryService = categoryService;
         }
 
-        // GET: api/Category?userId=...
+        // GET: api/Category
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryDtoResponse>>> GetUserCategories([FromQuery] Guid userId)
+        public async Task<ActionResult<IEnumerable<CategoryDtoResponse>>> GetUserCategories()
         {
-            var dtos = await _categoryService.GetUserCategoriesAsync(userId);
+            var dtos = await _categoryService.GetUserCategoriesAsync(CurrentUserId);
             return Ok(dtos);
         }
 
@@ -29,9 +31,8 @@ namespace LabsTRVD.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<CategoryDtoResponse>> GetCategory(int id)
         {
-            var category = await _categoryService.GetByIdAsync(id);
+            var category = await _categoryService.GetByIdAsync(id, CurrentUserId);
             if (category == null) return NotFound();
-
             return Ok(category);
         }
 
@@ -41,7 +42,7 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                var result = await _categoryService.AddCategoryAsync(dto);
+                var result = await _categoryService.AddCategoryAsync(dto, CurrentUserId);
                 return CreatedAtAction(nameof(GetCategory), new { id = result.CategoryId }, result);
             }
             catch (Exception ex)
@@ -56,7 +57,7 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                var result = await _categoryService.UpdateCategoryAsync(id, dto);
+                var result = await _categoryService.UpdateCategoryAsync(id, dto, CurrentUserId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -71,7 +72,7 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                await _categoryService.DeleteCategoryAsync(id);
+                await _categoryService.DeleteCategoryAsync(id, CurrentUserId);
                 return NoContent();
             }
             catch (Exception ex)

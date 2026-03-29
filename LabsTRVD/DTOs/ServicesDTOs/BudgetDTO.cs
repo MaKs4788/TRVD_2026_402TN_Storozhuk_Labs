@@ -5,9 +5,6 @@ namespace LabsTRVD.DTOs.ServicesDTOs
 {
     public class BudgetDto
     {
-        [Required(ErrorMessage = "UserId обов'язковий")]
-        public Guid UserId { get; set; }
-
         [Range(1, 12, ErrorMessage = "Місяць повинен бути від 1 до 12")]
         public int Month { get; set; }
 

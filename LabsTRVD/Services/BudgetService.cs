@@ -16,13 +16,13 @@ namespace LabsTRVD.Services
             _expenseRepository = expenseRepository;
         }
 
-        public async Task SetBudgetAsync(Guid userId, int month, int year, decimal limit)
+        public async Task SetBudgetAsync(Guid currentUserId, int month, int year, decimal limit)
         {
             if (limit <= 0)
                 throw new Exception("Ліміт повинен бути більше 0");
 
             var existing = await _budgetRepository.FindAsync(b =>
-                b.UserId == userId &&
+                b.UserId == currentUserId &&
                 b.Month == month &&
                 b.Year == year);
 
@@ -32,7 +32,7 @@ namespace LabsTRVD.Services
             {
                 await _budgetRepository.AddAsync(new Budget
                 {
-                    UserId = userId,
+                    UserId = currentUserId,
                     Month = month,
                     Year = year,
                     MonthlyLimit = limit
@@ -45,48 +45,48 @@ namespace LabsTRVD.Services
             }
         }
 
-        public async Task<decimal> GetMonthlyLimitAsync(Guid userId, int month, int year)
+        public async Task<decimal> GetMonthlyLimitAsync(Guid currentUserId, int month, int year)
         {
             var budget = (await _budgetRepository.FindAsync(b =>
-                b.UserId == userId &&
+                b.UserId == currentUserId &&
                 b.Month == month &&
                 b.Year == year)).FirstOrDefault();
 
             return budget?.MonthlyLimit ?? 0;
         }
 
-        public async Task<decimal> GetUsedAmountAsync(Guid userId, int month, int year)
+        public async Task<decimal> GetUsedAmountAsync(Guid currentUserId, int month, int year)
         {
             var from = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
             var to = from.AddMonths(1);
 
             var expenses = await _expenseRepository.FindAsync(e =>
-                e.UserId == userId &&
+                e.UserId == currentUserId &&
                 e.Date >= from &&
                 e.Date < to);
 
             return expenses.Sum(e => e.Amount);
         }
 
-        public async Task<decimal> GetRemainingBudgetAsync(Guid userId, int month, int year)
+        public async Task<decimal> GetRemainingBudgetAsync(Guid currentUserId, int month, int year)
         {
-            var limit = await GetMonthlyLimitAsync(userId, month, year);
-            var used = await GetUsedAmountAsync(userId, month, year);
+            var limit = await GetMonthlyLimitAsync(currentUserId, month, year);
+            var used = await GetUsedAmountAsync(currentUserId, month, year);
             return limit - used;
         }
 
-        public async Task<double> GetUsagePercentageAsync(Guid userId, int month, int year)
+        public async Task<double> GetUsagePercentageAsync(Guid currentUserId, int month, int year)
         {
-            var limit = await GetMonthlyLimitAsync(userId, month, year);
+            var limit = await GetMonthlyLimitAsync(currentUserId, month, year);
             if (limit == 0) return 0;
 
-            var used = await GetUsedAmountAsync(userId, month, year);
+            var used = await GetUsedAmountAsync(currentUserId, month, year);
             return (double)(used / limit * 100);
         }
 
-        public async Task<bool> IsBudgetExceeded(Guid userId, int month, int year)
+        public async Task<bool> IsBudgetExceeded(Guid currentUserId, int month, int year)
         {
-            var remaining = await GetRemainingBudgetAsync(userId, month, year);
+            var remaining = await GetRemainingBudgetAsync(currentUserId, month, year);
             return remaining < 0;
         }
     }

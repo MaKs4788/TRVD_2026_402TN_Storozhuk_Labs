@@ -1,134 +1,107 @@
 ﻿using LabsTRVD.DTOs.ServicesDTOs;
+using LabsTRVD.Extensions;
 using LabsTRVD.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LabsTRVD.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/expenses")]
     [Authorize]
-    public class ExpenseController : ControllerBase
+    public class ExpensesController : ControllerBase
     {
         private readonly IExpenseService _expenseService;
 
-        public ExpenseController(IExpenseService expenseService)
+        public ExpensesController(IExpenseService expenseService)
         {
             _expenseService = expenseService;
         }
 
-        // GET: api/Expense/user/{userId}
-        [HttpGet("user/{userId}")]
-        public async Task<IActionResult> GetUserExpenses(Guid userId)
+        private Guid CurrentUserId => User.GetUserId();
+
+        [HttpGet]
+        public async Task<IActionResult> GetMyExpenses()
         {
-            var dtos = await _expenseService.GetUserExpensesAsync(userId);
-            return Ok(dtos);
+            var expenses = await _expenseService.GetUserExpensesAsync(CurrentUserId);
+            return Ok(expenses);
         }
 
-        // GET: api/Expense/{id}
+        [HttpGet("period")]
+        public async Task<IActionResult> GetByPeriod([FromQuery] DateTime from, [FromQuery] DateTime to)
+        {
+            var expenses = await _expenseService.GetByPeriodAsync(CurrentUserId, from, to);
+            return Ok(expenses);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var expense = await _expenseService.GetByIdAsync(id);
-            if (expense == null) return NotFound();
-
+            var expense = await _expenseService.GetByIdAsync(id, CurrentUserId);
+            if (expense == null)
+                return NotFound(new { message = "Витрата не знайдена" });
             return Ok(expense);
         }
 
-        // POST: api/Expense
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ExpenseDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             try
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
-
-                var result = await _expenseService.AddExpenseAsync(dto);
-                return CreatedAtAction(nameof(GetById), new { id = result.ExpenseId }, result);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message, error = "Validation Error" });
-            }
-            catch (DbUpdateException ex)
-            {
-                return BadRequest(new 
-                { 
-                    message = "Помилка при збереженні в базі даних",
-                    details = ex.InnerException?.Message ?? ex.Message,
-                    error = "Database Error"
-                });
+                var created = await _expenseService.AddExpenseAsync(dto, CurrentUserId);
+                return CreatedAtAction(nameof(GetById), new { id = created.ExpenseId }, created);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new 
-                { 
-                    message = ex.Message,
-                    error = ex.GetType().Name,
-                    stackTrace = ex.StackTrace
-                });
-            }
-        }
-
-        // PUT: api/Expense/{id}
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] ExpenseDto dto)
-        {
-            try
-            {
-                var result = await _expenseService.UpdateExpenseAsync(id, dto);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                if (ex.Message.Contains("не знайдена"))
-                    return NotFound(new { message = ex.Message });
-
                 return BadRequest(new { message = ex.Message });
             }
         }
 
-        // DELETE: api/Expense/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] ExpenseDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var updated = await _expenseService.UpdateExpenseAsync(id, dto, CurrentUserId);
+                return Ok(updated);
+            }
+            catch (Exception ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             try
             {
-                await _expenseService.DeleteExpenseAsync(id);
+                await _expenseService.DeleteExpenseAsync(id, CurrentUserId);
                 return NoContent();
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains("не знайдена"))
-                    return NotFound(new { message = ex.Message });
-
-                return StatusCode(500, new { message = ex.Message });
+                return NotFound(new { message = ex.Message });
             }
         }
 
-        // GET: api/Expense/user/{userId}/total?from=...&to=...
-        [HttpGet("user/{userId}/total")]
-        public async Task<IActionResult> GetTotalForPeriod(Guid userId, DateTime from, DateTime to)
+        [HttpGet("total")]
+        public async Task<IActionResult> GetTotal()
         {
-            var total = await _expenseService.GetTotalForPeriodAsync(userId, from, to);
+            var total = await _expenseService.GetTotalAsync(CurrentUserId);
             return Ok(new { total });
         }
 
-        // GET: api/Expense/user/{userId}/total/current-month
-        [HttpGet("user/{userId}/total/current-month")]
-        public async Task<IActionResult> GetTotalCurrentMonth(Guid userId)
+        [HttpGet("total/month")]
+        public async Task<IActionResult> GetTotalCurrentMonth()
         {
-            var total = await _expenseService.GetTotalCurrentMonthAsync(userId);
-            return Ok(new { total });
-        }
-
-        // GET: api/Expense/user/{userId}/total/all
-        [HttpGet("user/{userId}/total/all")]
-        public async Task<IActionResult> GetTotal(Guid userId)
-        {
-            var total = await _expenseService.GetTotalAsync(userId);
+            var total = await _expenseService.GetTotalCurrentMonthAsync(CurrentUserId);
             return Ok(new { total });
         }
     }

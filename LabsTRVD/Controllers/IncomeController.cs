@@ -1,4 +1,5 @@
 ﻿using LabsTRVD.DTOs.ServicesDTOs;
+using LabsTRVD.Extensions;
 using LabsTRVD.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,17 +13,18 @@ namespace LabsTRVD.Controllers
     public class IncomeController : ControllerBase
     {
         private readonly IIncomeService _incomeService;
+        private Guid CurrentUserId => User.GetUserId();
 
         public IncomeController(IIncomeService incomeService)
         {
             _incomeService = incomeService;
         }
 
-        // GET: api/Income?userId=...
+        // GET: api/Income
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<IncomeDtoResponse>>> GetUserIncomes([FromQuery] Guid userId)
+        public async Task<ActionResult<IEnumerable<IncomeDtoResponse>>> GetUserIncomes()
         {
-            var dtos = await _incomeService.GetUserIncomesAsync(userId);
+            var dtos = await _incomeService.GetUserIncomesAsync(CurrentUserId);
             return Ok(dtos);
         }
 
@@ -30,7 +32,7 @@ namespace LabsTRVD.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<IncomeDtoResponse>> GetIncome(int id)
         {
-            var income = await _incomeService.GetByIdAsync(id);
+            var income = await _incomeService.GetByIdAsync(id, CurrentUserId);
             if (income == null) return NotFound();
             return Ok(income);
         }
@@ -44,7 +46,7 @@ namespace LabsTRVD.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var result = await _incomeService.AddIncomeAsync(dto);
+                var result = await _incomeService.AddIncomeAsync(dto, CurrentUserId);
                 return CreatedAtAction(nameof(GetIncome), new { id = result.IncomeId }, result);
             }
             catch (InvalidOperationException ex)
@@ -53,8 +55,8 @@ namespace LabsTRVD.Controllers
             }
             catch (DbUpdateException ex)
             {
-                return BadRequest(new 
-                { 
+                return BadRequest(new
+                {
                     message = "Помилка при збереженні в базі даних",
                     details = ex.InnerException?.Message ?? ex.Message,
                     error = "Database Error"
@@ -62,8 +64,8 @@ namespace LabsTRVD.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new 
-                { 
+                return StatusCode(500, new
+                {
                     message = ex.Message,
                     error = ex.GetType().Name,
                     stackTrace = ex.StackTrace
@@ -77,7 +79,7 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                var result = await _incomeService.UpdateIncomeAsync(id, dto);
+                var result = await _incomeService.UpdateIncomeAsync(id, dto, CurrentUserId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -92,7 +94,7 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                await _incomeService.DeleteIncomeAsync(id);
+                await _incomeService.DeleteIncomeAsync(id, CurrentUserId);
                 return NoContent();
             }
             catch (Exception ex)
@@ -101,30 +103,29 @@ namespace LabsTRVD.Controllers
             }
         }
 
-        // GET: api/Income/total?userId=...&from=...&to=...
+        // GET: api/Income/total?from=...&to=...
         [HttpGet("total")]
         public async Task<ActionResult<decimal>> GetTotalForPeriod(
-            [FromQuery] Guid userId,
             [FromQuery] DateTime from,
             [FromQuery] DateTime to)
         {
-            var total = await _incomeService.GetTotalForPeriodAsync(userId, from, to);
+            var total = await _incomeService.GetTotalForPeriodAsync(CurrentUserId, from, to);
             return Ok(total);
         }
 
-        // GET: api/Income/total/current-month?userId=...
+        // GET: api/Income/total/current-month
         [HttpGet("total/current-month")]
-        public async Task<ActionResult<decimal>> GetTotalCurrentMonth([FromQuery] Guid userId)
+        public async Task<ActionResult<decimal>> GetTotalCurrentMonth()
         {
-            var total = await _incomeService.GetTotalCurrentMonthAsync(userId);
+            var total = await _incomeService.GetTotalCurrentMonthAsync(CurrentUserId);
             return Ok(total);
         }
 
-        // GET: api/Income/total/all?userId=...
+        // GET: api/Income/total/all
         [HttpGet("total/all")]
-        public async Task<ActionResult<decimal>> GetTotalAll([FromQuery] Guid userId)
+        public async Task<ActionResult<decimal>> GetTotalAll()
         {
-            var total = await _incomeService.GetTotalAsync(userId);
+            var total = await _incomeService.GetTotalAsync(CurrentUserId);
             return Ok(total);
         }
     }

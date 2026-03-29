@@ -10,8 +10,6 @@ namespace LabsTRVD.DTOs.ServicesDTOs
         public decimal Amount { get; set; }
         [Required(ErrorMessage = "Дата обов'язкова")]
         public DateTime Date { get; set; }
-        [Required(ErrorMessage = "UserId обов'язковий")]
-        public Guid UserId { get; set; }
         public int? CategoryId { get; set; }
         [StringLength(250, ErrorMessage = "Опис не може бути довше 250 символів")]
         public string? Description { get; set; }

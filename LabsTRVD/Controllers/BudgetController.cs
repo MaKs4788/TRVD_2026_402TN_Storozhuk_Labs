@@ -1,5 +1,6 @@
 ﻿using LabsTRVD.DTOs;
 using LabsTRVD.DTOs.ServicesDTOs;
+using LabsTRVD.Extensions;
 using LabsTRVD.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ namespace LabsTRVD.Controllers
     public class BudgetController : ControllerBase
     {
         private readonly IBudgetService _budgetService;
+        private Guid CurrentUserId => User.GetUserId();
 
         public BudgetController(IBudgetService budgetService)
         {
@@ -24,8 +26,9 @@ namespace LabsTRVD.Controllers
         {
             try
             {
-                await _budgetService.SetBudgetAsync(dto.UserId, dto.Month, dto.Year, dto.MonthlyLimit);
-                return Ok(dto);
+                // Використовуємо CurrentUserId замість dto.UserId
+                await _budgetService.SetBudgetAsync(CurrentUserId, dto.Month, dto.Year, dto.MonthlyLimit);
+                return Ok(new { message = "Бюджет встановлено", month = dto.Month, year = dto.Year });
             }
             catch (Exception ex)
             {
@@ -33,19 +36,19 @@ namespace LabsTRVD.Controllers
             }
         }
 
-        // GET: api/Budget/{userId}/summary?month=3&year=2026
-        [HttpGet("{userId}/summary")]
-        public async Task<IActionResult> GetBudgetSummary(Guid userId, [FromQuery] int month, [FromQuery] int year)
+        // GET: api/Budget/summary?month=3&year=2026
+        [HttpGet("summary")]
+        public async Task<IActionResult> GetBudgetSummary([FromQuery] int month, [FromQuery] int year)
         {
             try
             {
                 var summary = new BudgetSummaryDto
                 {
-                    Limit = await _budgetService.GetMonthlyLimitAsync(userId, month, year),
-                    Used = await _budgetService.GetUsedAmountAsync(userId, month, year),
-                    Remaining = await _budgetService.GetRemainingBudgetAsync(userId, month, year),
-                    UsagePercentage = await _budgetService.GetUsagePercentageAsync(userId, month, year),
-                    Exceeded = await _budgetService.IsBudgetExceeded(userId, month, year)
+                    Limit = await _budgetService.GetMonthlyLimitAsync(CurrentUserId, month, year),
+                    Used = await _budgetService.GetUsedAmountAsync(CurrentUserId, month, year),
+                    Remaining = await _budgetService.GetRemainingBudgetAsync(CurrentUserId, month, year),
+                    UsagePercentage = await _budgetService.GetUsagePercentageAsync(CurrentUserId, month, year),
+                    Exceeded = await _budgetService.IsBudgetExceeded(CurrentUserId, month, year)
                 };
 
                 return Ok(summary);
